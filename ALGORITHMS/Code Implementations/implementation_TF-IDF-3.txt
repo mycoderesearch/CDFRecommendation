@@ -1,0 +1,36 @@
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+ 
+arr = ["Car was cleaned by Jack",
+    "Jack was cleaned by Car."]
+ 
+# If you want to take into account just term frequencies:
+vectorizer = CountVectorizer(ngram_range=(2,2))
+# The ngram range specifies your ngram configuration.
+ 
+X = vectorizer.fit_transform(arr)
+# Testing the ngram generation:
+print(vectorizer.get_feature_names())
+# This will print: ['by car', 'by jack', 'car was', 'cleaned by', 'jack was', 'was cleaned']
+ 
+print(X.toarray())
+# This will print:[[0 1 1 1 0 1], [1 0 0 1 1 1]]
+ 
+## And now testing TFIDF vectorizer:
+vectorizer = TfidfVectorizer(ngram_range=(2,2)) # You can still specify n-grams here.
+X = vectorizer.fit_transform(arr)
+ 
+ 
+# Testing the TFIDF value + ngrams:
+print(X.toarray())
+# This will print:  [[ 0.          0.57615236  0.57615236  0.40993715  0.          0.40993715]
+# [ 0.57615236  0.          0.          0.40993715  0.57615236  0.40993715]]
+ 
+ 
+## Testing TFIDF vectorizer without normalization:
+vectorizer = TfidfVectorizer(ngram_range=(2,2), norm=None) # You can still specify n-grams here.
+X = vectorizer.fit_transform(arr)
+ 
+# Testing TFIDF value before normalization:
+print(X.toarray())
+# This will print: [[ 0.          1.40546511  1.40546511  1.          0.          1.        ]
+# [ 1.40546511  0.          0.          1.          1.40546511  1.        ]]

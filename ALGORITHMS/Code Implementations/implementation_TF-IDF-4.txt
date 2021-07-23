@@ -1,0 +1,11 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
+ 
+tvec = TfidfVectorizer(stop_words='english')
+tvec.fit(data_train['data'])
+tvecdata = tvec.transform(data_train['data'])
+ 
+X_train  = pd.DataFrame(tvec.fit_transform(data_train['data']).todense(),columns=tvec.get_feature_names())
+ 
+print(X_train.shape)
+X_test = pd.DataFrame(tvec.transform(data_test['data']).todense(),columns=tvec.get_feature_names())
+print(X_test.shape)

@@ -1,0 +1,181 @@
+##############################################################
+# V2 = use bounding box information to weight words in OCR
+## add imagehash to dedup
+##############################################
+## common functions 
+##############################################
+import logging, os, re
+import pandas as pd
+import collections, struct, pickle, json, re
+from ast import literal_eval
+from tqdm import tqdm
+from io import open
+from os.path import join
+from multiprocessing import Pool
+from math import sqrt, log
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.preprocessing import normalize
+from scipy.sparse import vstack
+import argparse
+ 
+ 
+def ocrCleanup(OCRstring, minWordLen=3):
+    """ remove non alphabet/ numbers chars"""
+    clean =  re.sub('[^a-zA-Z1-9]+', ' ', str(OCRstring))
+    clean = [w for w in clean.split() if len(w)>=minWordLen]
+    clean = ' '.join(clean)
+    return clean.lower()
+ 
+ 
+def extractWordROIs(OCR, WordROIs):
+    OCR = OCR.split('#N#')
+    Words = [w for OCRline in OCR for w in OCRline.split(' ')]
+    WordROIs = list(map(float, WordROIs.split(',')))
+    OCRjson = []
+ 
+    for wordIdx in range(len(Words)):
+        WordROI = WordROIs[wordIdx*8 : (wordIdx+1)*8]    
+        WordBB = {  "Words": 
+                    [{ "Text": Words[wordIdx], 
+                        "BoundingBox": {
+                            "TopLeft": {"X":WordROI[0], "Y":WordROI[1]},
+                            "TopRight":  {"X":WordROI[2], "Y":WordROI[3]},
+                            "BottomRight":  {"X":WordROI[4], "Y":WordROI[5]},
+                            "BottomLeft":  {"X":WordROI[6], "Y":WordROI[7]}
+                        }
+                    }]
+                }
+        OCRjson.append(WordBB)
+    return OCRjson        
+ 
+def calculateWidthHeight(w):
+    edges = [
+        sqrt((w['BoundingBox']['BottomLeft']['X'] - w['BoundingBox']['BottomRight']['X']) ** 2 + (w['BoundingBox']['BottomLeft']['Y'] - w['BoundingBox']['BottomRight']['Y']) ** 2),
+        sqrt((w['BoundingBox']['TopRight']['X'] - w['BoundingBox']['BottomRight']['X']) ** 2 + (w['BoundingBox']['TopRight']['Y'] - w['BoundingBox']['BottomRight']['Y']) ** 2),
+        sqrt((w['BoundingBox']['TopRight']['X'] - w['BoundingBox']['TopLeft']['X']) ** 2 + (w['BoundingBox']['TopRight']['Y'] - w['BoundingBox']['TopLeft']['Y']) ** 2),
+        sqrt((w['BoundingBox']['TopLeft']['X'] - w['BoundingBox']['BottomLeft']['X']) ** 2 + (w['BoundingBox']['TopLeft']['Y'] - w['BoundingBox']['BottomLeft']['Y']) ** 2)
+    ]
+    width = max(edges)
+    height = min(edges)
+    return width, height
+ 
+def parseOcrRecord(ocrJson):
+    words = [ y for x in ocrJson for y in x['Words'] ]
+    words = [ { 'text': w['Text'], 
+               'wh': calculateWidthHeight(w) } for w in words ]
+    words = [ {'text': w['text'], 'w': w['wh'][0], 'h': w['wh'][1], 'area': w['wh'][0] * w['wh'][1] } for w in words ]
+    return words
+ 
+def getNormalizedWeights(words):
+    sumArea = sum([ sqrt(w['h']) for w in words ])
+    weights = [ sqrt(w['h']) / sumArea for w in words ]
+    texts = [w['text'] for w in words]
+    return list(zip(texts, weights))
+    #weightedTf = sum([ f * w for f, w in zip(wordsTf, weights) ])    
+ 
+import mmap
+def getNumLines(file_path):
+    fp = open(file_path, "r+")
+    buf = mmap.mmap(fp.fileno(), 0)
+    lines = 0
+    while buf.readline():
+        lines += 1
+    return lines
+#getNumLines(OCR_WEIGHTS_FN)
+ 
+idxSources = ['OCR', 'ProductTitle', 'ProductTitle_and_OCR']
+ 
+### READ Weights
+def getWeightedTfIdfV3(words_w_weights, normMethod=None):    
+    try:
+        if len(words_w_weights) == 0:
+            return tfidf_transformer.transform(count_vect.transform([ '' ]))
+        wordsTf = count_vect.transform([ w[0] for w in words_w_weights])
+        weights = [w[1] for w in words_w_weights]
+        weightedTf = sum([ f * w for f, w in zip(wordsTf, weights)])
+        # get sublinear value of Tf
+        tfs = sum(wordsTf)
+        sublinearTfs = tfs.data.astype(float)
+        sublinearTfs += 1
+        # scale factor between tf and sublinear tf.
+        weightedTf.data *= sublinearTfs
+        weightedTf.data /= tfs.data
+        textFeature = tfidf_transformer.transform(weightedTf)
+        if normMethod:
+            textFeature = normalize(textFeatures, norm=normMethod, axis = 1)
+        return textFeature
+    except Exception as e:
+        print(e)    
+ 
+def runPipeline(line, normMethod=None):
+    MurlKey, MD5String, ProductTitle, OCR, LineROIs, WordROIs = line.strip('\n').split('\t')
+    ocrJson = extractWordROIs(OCR, WordROIs)
+    words = parseOcrRecord(ocrJson)
+    words_w_weights = getNormalizedWeights(words)
+    words_w_weights = [(ocrCleanup(w[0]), w[1]) for w in words_w_weights if ocrCleanup(w[0])]
+    return getWeightedTfIdfV3(words_w_weights, normMethod)
+ 
+def getTextFeaturesMultiprocessor(lines):
+    res = []
+    for line in tqdm(lines, total=len(lines)):
+        res.append(runPipeline(line))
+    # list(map(runPipeline, lines))
+    return res
+ 
+def linspace(lower, upper, length):
+    return [int(lower + x*(upper-lower)/length) for x in range(length+1)]
+ 
+ 
+###########################################################################
+# load processed counter vector
+###########################################################################
+idxSource = idxSources[2]
+TFIDF_FN = '{}_tfidf_3gram.pickle'.format(idxSource)
+ 
+numProcessor = 64
+normMethod = 'l1'
+DAT_DIR = "F:\\sechangc\\shoppingProducts\\dat\\"
+#DAT_DIR = '\\\\ccpiu02\shoppingProducts\\dat\\'
+os.chdir(DAT_DIR)
+# TEST SMALL DATASET
+#OCR_FN = 'FashionIndex_TriggeredList_Title_OCR_bb_50k_test2.tsv'
+#TFIDF_WEIGHTED_FN = 'tfidf_3gram_weighted_norm_test.pickle'
+#OCR_WEIGHTS_FN = 'FashionIndex_TriggeredList_Title_OCR_bb_50k_test2_precomputedWeights.tsv'
+ 
+# LARGE DATASET
+OCR_FN = 'FashionIndex_TriggeredList_Title_OCR_bb_V2_20180927.tsv'
+TFIDF_WEIGHTED_FN = join(DAT_DIR, '{}_weighted_tfidf_3gram.pickle'.format(idxSource))
+ 
+#OCR_WEIGHTS_FN = 'FashionIndex_TriggeredList_Title_OCR_bb_V2_20180927_precomputedWeights.tsv'
+ 
+# load count_vect
+with open(TFIDF_FN, 'rb') as fp:
+    tfidf = pickle.load(fp)
+count_vect = tfidf['count']
+tfidf_transformer = tfidf['tfidf']
+ 
+ 
+ 
+if __name__ == '__main__':
+    # prepare to train new tfidf
+    print('start reading the file')
+    #lines = [ x for x in open(OCR_FN, encoding='utf-8') ]
+    lines = []
+    with open(OCR_FN, encoding='utf-8') as file:
+        for line in tqdm(file, total=getNumLines(OCR_FN)):
+            lines.append(line)
+    print('file read, num of lines', len(lines))
+ 
+    import pdb
+    pdb.set_trace()
+    with Pool(processes=numProcessor) as p:
+        textFeatures = list(tqdm(p.imap(runPipeline, lines), total=len(lines) ))    
+    #textFeatures = list(tqdm(pool.map(runPipeline, lines), total=len(lines)))
+    trainTfidf = vstack(textFeatures)
+    print(trainTfidf.shape)
+ 
+    print('Vocabulary size in tfidf: {}'.format(trainTfidf.get_shape()))
+    tfidf = { 'count': count_vect, 'tfidf': trainTfidf }
+    with open(TFIDF_WEIGHTED_FN, 'wb') as fp:
+        pickle.dump(tfidf, fp)
+    print('output saves in ', TFIDF_WEIGHTED_FN, ' successfully.' )
