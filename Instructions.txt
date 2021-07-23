@@ -1,0 +1,6 @@
+
+Instructions:
+
+1. Google Play Crawler includes all the codes relating to app crawling. 
+2. Feature Extruction Includes code relating to functional feature extruction
+3. Algorithm includes all the algorithm including our proposed one. 
