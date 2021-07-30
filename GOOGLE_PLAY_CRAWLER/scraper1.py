@@ -29,7 +29,6 @@ print(result)
 # 	newname=newname+str(x)+"."
 # print(newname)
 
-# path_apk_dir='C:\\Users\\mdkafiluddin\\Desktop\\'
 # app_url = 'https://play.google.com/store/apps/details?id=com.canva.editor&hl=en&gl=us'
 
 # wget.download(app_url,path_apk_dir)
