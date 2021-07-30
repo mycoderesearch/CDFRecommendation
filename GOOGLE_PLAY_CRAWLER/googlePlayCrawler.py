@@ -8,7 +8,7 @@ import shutil
 
 
 # Get directory name
-path_root_dir='C:\\Users\\mdkafiluddin\\Desktop\\Research\\Dataset\\GooglePlay2020'
+path_root_dir='..\\Dataset\\GooglePlay2020'
 
 # Create directory for processing
 def create_dir(path_dir):
@@ -130,15 +130,6 @@ for category in os.listdir(path_root_dir):
 			extract_appID(path_dir,filename)
 	print('+++++++++++++++++++++++')
 
-
-
-
-
-# count= 1;
-# filename = "C:\\Users\\mdkafiluddin\\Desktop\\Research\\Dataset\\GooglePlay2020\\Art_and_Design\\art_and_design_trending_au.json" 
-# url_file = "C:\\Users\\mdkafiluddin\\Desktop\\Research\\Dataset\\GooglePlay2020\\Art_and_Design\\art_and_design_grossing\\app_url.csv"
-# desc_file= "C:\\Users\\mdkafiluddin\\Desktop\\Research\\Dataset\\GooglePlay2020\\Art_and_Design\\art_and_design_grossing\\app_desc.csv"
-# pop_file= "C:\\Users\\mdkafiluddin\\Desktop\\Research\\Dataset\\GooglePlay2020\\Art_and_Design\\art_and_design_grossing\\app_popularity.csv"
 
 
 
