@@ -17,8 +17,8 @@ from nltk.tag.stanford import StanfordPOSTagger
 #path_to_model = "../stanford-postagger-full-2016-10-31/models/english-bidirectional-distsim.tagger"
 #path_to_jar = "../stanford-postagger-full-2016-10-31/stanford-postagger.jar"
 
-path_to_model = "C:/Kafil/Lab/Python/FE_SAFE.py/stanford-postagger-2016-10-31/models/english-bidirectional-distsim.tagger"
-path_to_jar = "C:/Kafil/Lab/Python/FE_SAFE.py/stanford-postagger-2016-10-31/stanford-postagger.jar"
+path_to_model = "../stanford-postagger-2016-10-31/models/english-bidirectional-distsim.tagger"
+path_to_jar = "../stanford-postagger-2016-10-31/stanford-postagger.jar"
 
 st_tagger = StanfordPOSTagger(path_to_model, path_to_jar)
 
@@ -943,13 +943,13 @@ Looking for faded D? We made the S, D and R colors darker!  """
     # print("------",x)
     # print("++++++",y)
 
-    whatsnew_f= open('C:\\Users\\mdkafiluddin\\Desktop\\Research\\Experiments\\RQ2\\kik\\kik_whatsnew.txt', encoding="utf-8", errors="ignore")
-    whatsnew_text = whatsnew_f.read()
-    whatsnew_f.close()
-    # print(str(whatsnew_text))
-    set_A=feature_extractor.extract_from_description(whatsnew_text)
-    set_B=feature_extractor.extract_from_review(whatsnew_text)
-    set_C=set_A.union(set_B)
+    # whatsnew_f= open('..\\kik_whatsnew.txt', encoding="utf-8", errors="ignore")
+    # whatsnew_text = whatsnew_f.read()
+    # whatsnew_f.close()
+    # # print(str(whatsnew_text))
+    # set_A=feature_extractor.extract_from_description(whatsnew_text)
+    # set_B=feature_extractor.extract_from_review(whatsnew_text)
+    # set_C=set_A.union(set_B)
     
-    print("Union++++",set_C)
+    # print("Union++++",set_C)
     # print("R++++",feature_extractor.extract_from_review((whatsnew_text)))

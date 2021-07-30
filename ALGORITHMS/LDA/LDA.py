@@ -13,14 +13,14 @@ lemma = WordNetLemmatizer()
 # doc3 = "Doctors suggest that driving may cause increased stress and blood pressure."
 # doc4 = "Sometimes I feel pressure to perform well at school, but my father never seems to drive my sister to do better."
 # doc5 = "Health experts say that Sugar is not good for your lifestyle."
-review_file= 'C:\\Users\\mdkafiluddin\\Downloads\\stemmedsimplewtokensbushfire.txt'
+feature_file= '..\\stemmedsimplewtokensbushfire.txt'
 
 # OPTION-1
-# with open(review_file) as f:
+# with open(feature_file) as f:
 #     doc_complete = f.readlines()
 
 # OPTION-2
-with open(review_file, encoding="utf8",errors='ignore') as f:
+with open(feature_file, encoding="utf8",errors='ignore') as f:
     doc_complete = f.readlines()
     # print(doc_complete)
     # print(len(doc_complete))

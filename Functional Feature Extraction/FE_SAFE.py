@@ -17,8 +17,8 @@ from nltk.tag.stanford import StanfordPOSTagger
 #path_to_model = "../stanford-postagger-full-2016-10-31/models/english-bidirectional-distsim.tagger"
 #path_to_jar = "../stanford-postagger-full-2016-10-31/stanford-postagger.jar"
 
-path_to_model = "C:/Kafil/Lab/Python/FE_SAFE.py/stanford-postagger-2016-10-31/models/english-bidirectional-distsim.tagger"
-path_to_jar = "C:/Kafil/Lab/Python/FE_SAFE.py/stanford-postagger-2016-10-31/stanford-postagger.jar"
+path_to_model = "../stanford-postagger-2016-10-31/models/english-bidirectional-distsim.tagger"
+path_to_jar = "../stanford-postagger-2016-10-31/stanford-postagger.jar"
 
 st_tagger = StanfordPOSTagger(path_to_model, path_to_jar)
 

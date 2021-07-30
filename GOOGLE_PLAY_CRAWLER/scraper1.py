@@ -1,9 +1,9 @@
 from google_play_scraper import app
-
+# when you have the app name
 result = app(
     'com.woolworths',
-    lang='ar', # defaults to 'en'
-    country='SA', # defaults to 'us'
+    lang='en', # defaults to 'en'
+    country='us', # defaults to 'us'
 )
 
 print(result)
